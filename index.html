@@ -1,0 +1,1436 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vagues de froid</title>
+<meta name="description" content="Portail climatique perso : vagues de froid hivernales détectées à partir des données quotidiennes Météo-France.">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --surface-2: #f0efec;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.10);
+  --wash: rgba(11, 11, 11, 0.04);
+  --series-1: #2a78d6;
+  --series-1-hover: #5598e7;
+  --series-1-strong: #1c5cab;
+  --band: rgba(42, 120, 214, 0.11);
+  --warm: #e34948;
+  --ci: rgba(11, 11, 11, 0.07);
+  --gel-1: #86b6ef;
+  --gel-2: #1c5cab;
+  --status-warning: #fab219;
+  --shadow: 0 6px 24px rgba(11, 11, 11, 0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #262624;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --wash: rgba(255, 255, 255, 0.05);
+    --series-1: #3987e5;
+    --series-1-hover: #6da7ec;
+    --series-1-strong: #9ec5f4;
+    --band: rgba(57, 135, 229, 0.18);
+    --warm: #e66767;
+    --ci: rgba(255, 255, 255, 0.08);
+    --gel-1: #256abf;
+    --gel-2: #9ec5f4;
+    --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --surface-2: #262624;
+  --ink: #f0efec;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.10);
+  --wash: rgba(255, 255, 255, 0.05);
+  --series-1: #3987e5;
+  --series-1-hover: #6da7ec;
+  --series-1-strong: #9ec5f4;
+  --band: rgba(57, 135, 229, 0.18);
+  --warm: #e66767;
+  --ci: rgba(255, 255, 255, 0.08);
+  --gel-1: #256abf;
+  --gel-2: #9ec5f4;
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+header.wrap { padding-top: 36px; padding-bottom: 20px; }
+.kicker {
+  margin: 0 0 6px; color: var(--muted);
+  font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+}
+h1 { margin: 0; font-size: clamp(24px, 4vw, 32px); line-height: 1.2; font-weight: 650; letter-spacing: -.01em; }
+.lede { margin: 10px 0 0; max-width: 72ch; color: var(--ink-2); }
+label.field { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+select, button { font: inherit; color: var(--ink); }
+select {
+  appearance: none; -webkit-appearance: none;
+  background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23898781' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 6px 30px 6px 10px; font-size: 14px; cursor: pointer;
+}
+:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile .t-label { font-size: 13px; color: var(--ink-2); }
+.tile .t-value { font-size: 28px; font-weight: 600; line-height: 1.25; margin-top: 2px; }
+.tile .t-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px 16px; margin-top: 16px; }
+.card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.card h2, .card h3 { margin: 0; font-size: 17px; font-weight: 600; }
+
+.toolbar-wrap { position: sticky; top: 0; z-index: 5; background: var(--page); border-bottom: 1px solid var(--border); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding-top: 10px; padding-bottom: 10px; }
+.rubriques { display: flex; flex-wrap: wrap; gap: 2px; }
+.rubriques a {
+  color: var(--ink-2); text-decoration: none; font-size: 14px;
+  padding: 6px 10px; border-radius: 7px;
+}
+.rubriques a:hover { background: var(--wash); color: var(--ink); }
+.rubriques a[aria-current="true"] { color: var(--ink); font-weight: 600; background: var(--surface-2); }
+.rubrique { margin-top: 36px; scroll-margin-top: 64px; }
+.rubrique:first-child { margin-top: 20px; }
+.rubrique-head h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+.rubrique-intro { margin: 6px 0 0; color: var(--ink-2); max-width: 74ch; }
+.card { scroll-margin-top: 64px; }
+
+.bar-a .m { transition: opacity .12s; }
+.bar-a .m.chaud { fill: var(--warm); }
+.bar-a .m.froid { fill: var(--series-1); }
+.bar-a.partial .m { opacity: .4; }
+.bar-a:hover .m, .bar-a.kb .m { opacity: .72; }
+.bar-a.partial:hover .m { opacity: .3; }
+.seg-gel1 { fill: var(--gel-1); }
+.seg-gel2 { fill: var(--gel-2); }
+.ci { fill: var(--ci); }
+.halo { fill: none; stroke: var(--surface); stroke-width: 5; stroke-linejoin: round; stroke-linecap: round; }
+.line-loess { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.line-trend { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; }
+.key-sq { width: 10px; height: 10px; border-radius: 2px; background: var(--k); display: inline-block; }
+.key-pair { display: inline-flex; gap: 2px; }
+.key-ci { width: 18px; height: 10px; border-radius: 2px; background: var(--ci); display: inline-block; }
+.bulle { fill: var(--series-1); fill-opacity: .55; stroke: var(--surface); stroke-width: 1.5; cursor: pointer; transition: fill-opacity .12s; }
+.bulle:hover, .bulle.kb { fill-opacity: .85; }
+.bulle.sel { fill-opacity: .85; stroke: var(--ink); stroke-width: 2; }
+.hit-bulle { fill: transparent; cursor: pointer; }
+.key-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--series-1); opacity: .7; display: inline-block; }
+.alerte {
+  margin-top: 20px; padding: 12px 16px; border-radius: 10px; background: var(--surface);
+  border: 1px solid var(--border); border-left: 4px solid #fab219; font-size: 14px;
+}
+.alerte strong { font-weight: 600; }
+.sub { margin: 2px 0 0; font-size: 13px; color: var(--ink-2); }
+.note { margin: 10px 0 0; font-size: 13px; color: var(--ink-2); }
+.note.muted { color: var(--muted); }
+
+.seg { display: inline-flex; background: var(--surface-2); border-radius: 9px; padding: 3px; gap: 2px; }
+.seg button {
+  border: 0; background: transparent; border-radius: 7px; padding: 5px 10px;
+  font-size: 13px; color: var(--ink-2); cursor: pointer;
+}
+.seg button:hover { background: var(--wash); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+.nav-hiver { display: inline-flex; align-items: center; gap: 6px; }
+.nav-hiver button {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font-size: 16px; line-height: 1;
+}
+.nav-hiver button:hover:not(:disabled) { background: var(--wash); }
+.nav-hiver button:disabled { opacity: .35; cursor: default; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--ink-2); margin: 2px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.key-line { width: 18px; height: 2px; border-radius: 1px; background: var(--k); display: inline-block; }
+.key-line.thin { height: 1px; }
+.key-band { width: 14px; height: 12px; border-radius: 3px; background: var(--band); display: inline-block; }
+
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart svg:focus-visible { outline-offset: 4px; border-radius: 4px; }
+svg text { font-family: inherit; }
+.grid { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+.axis { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+.tick { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.direct { fill: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.bar-mark { fill: var(--series-1); transition: fill .12s; }
+.bar.partial .bar-mark, .bar.partial .seg-gel1, .bar.partial .seg-gel2 { opacity: .45; }
+.bar:hover .seg-gel1, .bar:hover .seg-gel2, .bar.kb .seg-gel1, .bar.kb .seg-gel2 { opacity: .75; }
+.bar.sel .bar-mark { fill: var(--series-1-strong); }
+.bar:hover .bar-mark, .bar.kb .bar-mark { fill: var(--series-1-hover); }
+.sel-mark { fill: var(--ink-2); }
+.hit { fill: transparent; cursor: pointer; }
+.line-t { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.line-norm { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-linejoin: round; }
+.line-seuil { stroke: var(--ink-2); stroke-width: 1; shape-rendering: crispEdges; }
+.band { fill: var(--band); }
+.dot { fill: var(--series-1); stroke: var(--surface); stroke-width: 2; }
+.cross { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+.overlay { fill: transparent; cursor: crosshair; }
+.no-data { fill: var(--muted); font-size: 13px; }
+
+.table-wrap { overflow-x: auto; margin: 0 -4px; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 8px 10px; text-align: left; white-space: nowrap; }
+th { font-size: 13px; font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--axis); }
+td { border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+td.num, th.num { text-align: right; }
+th button {
+  font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer;
+  display: inline-flex; gap: 4px; align-items: center;
+}
+th button .arrow { color: var(--muted); font-size: 11px; min-width: 8px; }
+tbody tr.clic { cursor: pointer; }
+tbody tr.clic:hover, tbody tr.clic:focus-visible { background: var(--wash); }
+tbody tr.courant { background: var(--wash); }
+.flag { color: var(--muted); font-size: 12px; margin-left: 4px; }
+details { margin-top: 12px; }
+summary { cursor: pointer; font-size: 14px; color: var(--ink-2); padding: 4px 0; }
+summary:hover { color: var(--ink); }
+
+.methode ul { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); max-width: 80ch; }
+.methode li { margin: 6px 0; }
+.methode li strong { color: var(--ink); font-weight: 600; }
+
+.vide { text-align: center; padding: 48px 20px; }
+.vide code { background: var(--surface-2); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+
+footer.wrap { padding-top: 28px; padding-bottom: 40px; font-size: 13px; color: var(--muted); }
+footer p { margin: 4px 0; }
+
+.tip {
+  position: fixed; z-index: 20; pointer-events: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: var(--shadow); padding: 8px 10px; font-size: 13px; min-width: 160px; max-width: 280px;
+}
+.tip-head { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+.tip-row { display: flex; align-items: center; gap: 8px; margin: 2px 0; }
+.tip-key { width: 14px; height: 2px; border-radius: 1px; background: var(--k); flex: none; }
+.tip-key.band { height: 10px; border-radius: 2px; background: var(--band); }
+.tip-key.none { background: transparent; }
+.tip-val { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tip-lab { color: var(--ink-2); }
+
+@media (max-width: 560px) {
+  .card { padding: 16px 14px 14px; }
+  .tile .t-value { font-size: 24px; }
+  .toolbar { gap: 6px 12px; padding-top: 8px; padding-bottom: 8px; }
+  .rubriques a { padding: 5px 7px; font-size: 13px; }
+  th, td { padding: 7px 8px; }
+}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <p class="kicker">Portail climatique perso</p>
+  <h1 id="titre">Le climat hivernal</h1>
+  <p class="lede" id="lede">Chargement des données…</p>
+</header>
+
+<div class="toolbar-wrap" id="toolbar" hidden>
+  <div class="wrap toolbar">
+    <label class="field">Ville <select id="sel-ville"></select></label>
+    <nav class="rubriques" aria-label="Rubriques">
+      <a href="#vdf" data-cible="vdf">Vagues de froid</a>
+      <a href="#temperatures" data-cible="temperatures">Températures hivernales</a>
+      <a href="#methode-rub" data-cible="methode-rub">Méthode</a>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap" id="main">
+
+  <section class="rubrique" id="vdf" aria-labelledby="h-vdf">
+    <div class="rubrique-head">
+      <h2 id="h-vdf">Vagues de froid</h2>
+      <p class="rubrique-intro" id="intro-vdf"></p>
+    </div>
+    <div class="tiles" id="tiles" aria-label="Chiffres clés des vagues de froid"></div>
+
+    <section class="card" id="card-bulles">
+      <div class="card-head">
+        <div>
+          <h3>Toutes les vagues de froid</h3>
+          <p class="sub" id="sub-bulles"></p>
+        </div>
+      </div>
+      <div class="legend" id="legend-bulles"></div>
+      <div class="chart" id="chart-bulles"></div>
+      <p class="note muted" id="note-bulles"></p>
+    </section>
+
+    <section class="card" id="card-hivers">
+      <div class="card-head">
+        <div>
+          <h3 id="titre-hivers">Vagues de froid par hiver</h3>
+          <p class="sub" id="sub-hivers"></p>
+        </div>
+        <div class="seg" role="group" aria-label="Indicateur affiché" id="seg-metric">
+          <button type="button" data-m="jours_vdf" aria-pressed="true">Jours</button>
+          <button type="button" data-m="n_episodes" aria-pressed="false">Épisodes</button>
+          <button type="button" data-m="severite" aria-pressed="false">Sévérité</button>
+        </div>
+      </div>
+      <div class="chart" id="chart-hivers"></div>
+      <p class="note" id="note-hivers"></p>
+      <details>
+        <summary>Tableau des hivers</summary>
+        <div class="table-wrap"><table id="tab-hivers"></table></div>
+      </details>
+    </section>
+
+    <section class="card" id="card-jour">
+      <div class="card-head">
+        <div>
+          <h3 id="titre-jour">L'hiver au jour le jour</h3>
+          <p class="sub" id="sub-jour"></p>
+        </div>
+        <div class="nav-hiver">
+          <button type="button" id="prev" aria-label="Hiver précédent">‹</button>
+          <select id="sel-hiver" aria-label="Choisir un hiver"></select>
+          <button type="button" id="next" aria-label="Hiver suivant">›</button>
+        </div>
+      </div>
+      <div class="legend" id="legend-jour"></div>
+      <div class="chart" id="chart-jour"></div>
+    </section>
+
+    <section class="card" id="card-ep">
+      <div class="card-head">
+        <div>
+          <h3>Épisodes détectés</h3>
+          <p class="sub">Clique sur une ligne pour afficher l'hiver correspondant.</p>
+        </div>
+      </div>
+      <div class="table-wrap"><table id="tab-ep"></table></div>
+      <p class="note muted" id="note-ep"></p>
+    </section>
+  </section>
+
+  <section class="rubrique" id="temperatures" aria-labelledby="h-temp">
+    <div class="rubrique-head">
+      <h2 id="h-temp">Températures hivernales</h2>
+      <p class="rubrique-intro" id="intro-temp"></p>
+    </div>
+    <div class="tiles" id="tiles-temp" aria-label="Chiffres clés des températures hivernales"></div>
+
+    <section class="card" id="card-anom">
+      <div class="card-head">
+        <div>
+          <h3>Anomalie de la température moyenne de chaque hiver</h3>
+          <p class="sub" id="sub-anom"></p>
+        </div>
+      </div>
+      <div class="legend" id="legend-anom"></div>
+      <div class="chart" id="chart-anom"></div>
+      <p class="note" id="note-anom"></p>
+    </section>
+
+    <section class="card" id="card-gel">
+      <div class="card-head">
+        <div>
+          <h3>Jours de gel et jours sans dégel par hiver</h3>
+          <p class="sub" id="sub-gel"></p>
+        </div>
+      </div>
+      <div class="legend" id="legend-gel"></div>
+      <div class="chart" id="chart-gel"></div>
+      <p class="note" id="note-gel"></p>
+      <details>
+        <summary>Tableau des températures par hiver</summary>
+        <div class="table-wrap"><table id="tab-temp"></table></div>
+      </details>
+    </section>
+  </section>
+
+  <section class="rubrique" id="methode-rub" aria-labelledby="h-meth">
+    <div class="rubrique-head"><h2 id="h-meth">Méthode</h2></div>
+    <section class="card methode" id="card-methode">
+      <ul id="methode"></ul>
+    </section>
+  </section>
+</main>
+
+<footer class="wrap" id="footer"></footer>
+<div class="tip" id="tip" role="status" hidden></div>
+
+<noscript><p class="wrap">Cette page a besoin de JavaScript pour afficher les graphiques.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Utilitaires -------------------------------------------------
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = (s) => document.querySelector(s);
+  const nf0 = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
+  const nf1 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const moins = (s) => s.replace(/^-/, '−');
+  const nf2 = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = (v, dec) => {
+    if (v == null || isNaN(v)) return '—';
+    const f = Math.pow(10, dec || 0);
+    let r = Math.round(v * f) / f;
+    if (r === 0) r = 0; // évite « −0 »
+    return moins((dec === 2 ? nf2 : dec ? nf1 : nf0).format(r));
+  };
+  const signe = (v, dec) => { const s = fmt(v, dec); return (s === '—' || s.startsWith('−') || /^0([,.]0+)?$/.test(s)) ? s : '+' + s; };
+  const fmtP = (p) => (p == null || isNaN(p)) ? 'p non calculable' : p < 0.01 ? 'p < 0,01' : 'p = ' + nf2.format(p);
+  const signif = (p) => (p == null || isNaN(p)) ? '' : p < 0.05 ? 'significative au seuil de 5 %' : 'non significative';
+  const fmtT = (v) => (v == null || isNaN(v)) ? '—' : fmt(v, 1) + ' °C';
+  const fmtEcart = (v) => (v == null || isNaN(v)) ? '—' : signe(v, 1) + '\u00a0°C';
+  const parseISO = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+  const dfLong = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const dfCourt = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const dfCourtA = new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  const dateLongue = (s) => dfLong.format(parseISO(s));
+  const dateCourte = (s) => dfCourtA.format(parseISO(s));
+  const labelHiver = (h) => (h - 1) + '-' + String(h % 100).padStart(2, '0');
+  const pluriel = (n, un, plusieurs) => n > 1 ? plusieurs : un;
+
+  function joursHiver(h) {
+    const out = [];
+    let t = Date.UTC(h - 1, 11, 1);
+    const fin = Date.UTC(h, 2, 1);
+    while (t < fin) { out.push(new Date(t).toISOString().slice(0, 10)); t += 86400000; }
+    return out;
+  }
+  function el(tag, attrs, parent) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(tag, attrs, contenu, parent) { const e = el(tag, attrs, parent); e.textContent = contenu; return e; }
+  function h(tag, props, enfants) {
+    const e = document.createElement(tag);
+    if (props) for (const k in props) {
+      if (k === 'text') e.textContent = props[k];
+      else if (k === 'class') e.className = props[k];
+      else e.setAttribute(k, props[k]);
+    }
+    (enfants || []).forEach((c) => c && e.appendChild(c));
+    return e;
+  }
+  function pasLisible(etendue, cible) {
+    const brut = etendue / cible;
+    const p = Math.pow(10, Math.floor(Math.log10(brut)));
+    const f = brut / p;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+  }
+  function barreArrondie(x, y, w, hh, r) {
+    r = Math.min(r, w / 2, hh);
+    return `M${x},${y + hh}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + hh}Z`;
+  }
+  function colonnesVersLignes(o) {
+    const cles = Object.keys(o);
+    const n = cles.length ? o[cles[0]].length : 0;
+    const out = [];
+    for (let i = 0; i < n; i++) { const r = {}; for (const k of cles) r[k] = o[k][i]; out.push(r); }
+    return out;
+  }
+
+  // ---------- Infobulle ---------------------------------------------------
+  const tip = $('#tip');
+  function montrerTip(entete, lignes, cx, cy) {
+    tip.replaceChildren(h('div', { class: 'tip-head', text: entete }));
+    for (const l of lignes) {
+      const cle = h('span', { class: 'tip-key' + (l.type === 'band' ? ' band' : l.couleur ? '' : ' none') });
+      if (l.couleur) cle.style.setProperty('--k', l.couleur);
+      tip.appendChild(h('div', { class: 'tip-row' }, [
+        cle, h('span', { class: 'tip-val', text: l.valeur }), l.label ? h('span', { class: 'tip-lab', text: l.label }) : null
+      ]));
+    }
+    tip.hidden = false;
+    const tw = tip.offsetWidth, th = tip.offsetHeight;
+    let x = cx + 14, y = cy + 14;
+    if (x + tw > innerWidth - 8) x = cx - tw - 14;
+    if (y + th > innerHeight - 8) y = cy - th - 14;
+    tip.style.left = Math.max(8, x) + 'px';
+    tip.style.top = Math.max(8, y) + 'px';
+  }
+  const cacherTip = () => { tip.hidden = true; };
+
+  // ---------- Données -----------------------------------------------------
+  const METRIQUES = {
+    jours_vdf: { titre: 'Jours de vague de froid par hiver', unite: (v) => fmt(v) + ' j', dec: 0, court: 'jours' },
+    n_episodes: { titre: "Nombre d'épisodes par hiver", unite: (v) => fmt(v), dec: 0, court: 'épisodes' },
+    severite: { titre: 'Sévérité cumulée par hiver (°C·jour)', unite: (v) => fmt(v, 1) + ' °C·j', dec: 1, court: '°C·j' }
+  };
+  const etat = { slug: null, metrique: 'jours_vdf', hiver: null, tri: { cle: 'severite', sens: -1 }, kbBarre: null, kbJour: null };
+  const villes = {};
+  let C = null; // ville courante préparée
+
+  function preparer(D) {
+    const jours = D.quotidien.d.map((d, i) => ({ d, t: D.quotidien.t[i], e: D.quotidien.e[i] }));
+    const parDate = new Map(jours.map((x) => [x.d, x]));
+    const normale = new Map(D.normale_quotidienne.md.map((md, i) => [md, D.normale_quotidienne.t[i]]));
+    const hivers = colonnesVersLignes(D.hivers);
+    const episodes = colonnesVersLignes(D.episodes);
+    const parId = new Map(episodes.map((e) => [e.id, e]));
+    return { meta: D.meta, jours, parDate, normale, hivers, episodes, parId };
+  }
+
+  function chargerScript(src) {
+    return new Promise((res) => {
+      const s = document.createElement('script');
+      s.src = src; s.charset = 'utf-8';
+      s.onload = () => res(true); s.onerror = () => res(false);
+      document.head.appendChild(s);
+    });
+  }
+
+  async function demarrer() {
+    await chargerScript('data/villes.js');
+    let slugs = Array.isArray(window.PORTAIL_VILLES) ? window.PORTAIL_VILLES : ['dijon'];
+    slugs = slugs.filter((s) => /^[a-z0-9_-]+$/.test(s));
+    await Promise.all(slugs.map((s) => chargerScript('data/vdf_' + s + '.js')));
+    const dispo = window.PORTAIL_DATA || {};
+    for (const s of slugs) if (dispo[s] && dispo[s].meta) villes[s] = preparer(dispo[s]);
+    const cles = Object.keys(villes);
+    if (!cles.length) return pageVide();
+
+    const sel = $('#sel-ville');
+    cles.sort((a, b) => villes[a].meta.ville.localeCompare(villes[b].meta.ville, 'fr'))
+      .forEach((s) => sel.appendChild(h('option', { value: s, text: villes[s].meta.ville })));
+    $('#toolbar').hidden = false;
+    sel.addEventListener('change', () => changerVille(sel.value, null));
+
+    const [hs, hh] = decodeURIComponent(location.hash.slice(1)).split('/');
+    changerVille(villes[hs] ? hs : cles[0], hh ? Number(hh) : null);
+
+    document.querySelectorAll('#seg-metric button').forEach((b) => b.addEventListener('click', () => {
+      etat.metrique = b.dataset.m;
+      document.querySelectorAll('#seg-metric button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      dessinerBarres(); noteDecennies();
+    }));
+    $('#prev').addEventListener('click', () => decaler(-1));
+    $('#next').addEventListener('click', () => decaler(1));
+    $('#sel-hiver').addEventListener('change', (e) => choisirHiver(Number(e.target.value)));
+
+    // Navigation entre rubriques (sans toucher au #ville/hiver de l'adresse)
+    const liens = [...document.querySelectorAll('.rubriques a')];
+    liens.forEach((a) => a.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      document.getElementById(a.dataset.cible).scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    if ('IntersectionObserver' in window) {
+      const visibles = new Map();
+      const io = new IntersectionObserver((entrees) => {
+        entrees.forEach((e) => visibles.set(e.target.id, e.isIntersecting ? e.boundingClientRect.top : null));
+        const actif = liens.map((a) => a.dataset.cible).find((id) => visibles.get(id) != null);
+        liens.forEach((a) => a.setAttribute('aria-current', String(a.dataset.cible === actif)));
+      }, { rootMargin: '-80px 0px -55% 0px' });
+      liens.forEach((a) => io.observe(document.getElementById(a.dataset.cible)));
+    }
+
+    let attente = null;
+    new ResizeObserver(() => {
+      cancelAnimationFrame(attente);
+      attente = requestAnimationFrame(() => { dessinerBarres(); dessinerBulles(); dessinerJour(); dessinerAnomalies(); dessinerGel(); });
+    }).observe($('#main'));
+  }
+
+  function pageVide() {
+    $('#lede').textContent = '';
+    $('#main').replaceChildren(h('section', { class: 'card vide' }, [
+      h('h2', { text: 'Aucune donnée chargée' }),
+      h('p', { class: 'sub', text: 'Lance le script R scripts/VDF_portail.R : il crée le fichier data/vdf_dijon.js à côté de cette page, puis recharge-la.' })
+    ]));
+  }
+
+  function changerVille(slug, hiverDemande) {
+    etat.slug = slug; C = villes[slug];
+    $('#sel-ville').value = slug;
+    const hv = C.hivers;
+    let hiv = hiverDemande && hv.some((x) => x.hiver === hiverDemande) ? hiverDemande : null;
+    if (!hiv) {
+      const avecEp = hv.filter((x) => x.n_episodes > 0);
+      hiv = avecEp.length ? avecEp[avecEp.length - 1].hiver : hv[hv.length - 1].hiver;
+    }
+    etat.hiver = hiv;
+    remplirSelectHiver();
+    entete(); tuiles(); dessinerBarres(); noteDecennies(); tableHivers();
+    legendeJour(); dessinerJour(); tableEpisodes(); legendeBulles(); dessinerBulles();
+    tuilesTemp(); legendesTemp(); dessinerAnomalies(); dessinerGel(); notesTemp(); tableTemp();
+    methode(); pied(); alerteVersion();
+    majHash();
+  }
+
+  function choisirHiver(hv, defiler) {
+    etat.hiver = hv;
+    $('#sel-hiver').value = String(hv);
+    dessinerBarres(); dessinerJour(); tableEpisodes(); dessinerBulles(); dessinerAnomalies(); dessinerGel();
+    majBoutons(); majHash();
+    if (defiler) $('#card-jour').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function decaler(d) {
+    const liste = C.hivers.map((x) => x.hiver);
+    const i = liste.indexOf(etat.hiver) + d;
+    if (i >= 0 && i < liste.length) choisirHiver(liste[i]);
+  }
+  function majBoutons() {
+    const liste = C.hivers.map((x) => x.hiver);
+    const i = liste.indexOf(etat.hiver);
+    $('#prev').disabled = i <= 0;
+    $('#next').disabled = i >= liste.length - 1;
+  }
+  function majHash() {
+    try { history.replaceState(null, '', '#' + etat.slug + '/' + etat.hiver); } catch (e) { /* file:// selon navigateur */ }
+  }
+  function remplirSelectHiver() {
+    const s = $('#sel-hiver');
+    s.replaceChildren();
+    [...C.hivers].reverse().forEach((x) => {
+      const suffixe = x.n_episodes ? ' · ' + x.n_episodes + ' ' + pluriel(x.n_episodes, 'épisode', 'épisodes') : '';
+      s.appendChild(h('option', { value: String(x.hiver), text: x.label + suffixe }));
+    });
+    s.value = String(etat.hiver);
+    majBoutons();
+  }
+
+  // ---------- En-tête & tuiles -------------------------------------------
+  function phraseDefinition(m) {
+    return `au moins ${m.duree_min} jours consécutifs avec une ${m.variable_libelle} sous ${fmtT(m.seuil)}, ` +
+      `le ${m.percentile}e percentile des jours d'hiver (décembre-février) ${m.hiver_ref[0]}-${m.hiver_ref[1]}`;
+  }
+  function entete() {
+    const m = C.meta;
+    const dernier = C.hivers[C.hivers.length - 1];
+    document.title = 'Climat hivernal · ' + m.ville;
+    $('#titre').textContent = 'Le climat hivernal à ' + m.ville;
+    $('#lede').textContent = `Station ${m.station} (n° ${m.num_poste}, ${fmt(m.alti)} m), ` +
+      `hivers ${labelHiver(m.hiver_analyse[0])} à ${dernier.label} (décembre-février), comparés aux normales ${m.hiver_ref[0]}-${m.hiver_ref[1]}.`;
+    $('#intro-vdf').textContent = `Une vague de froid, ici, c'est ${phraseDefinition(m)}.`;
+    $('#intro-temp').textContent = `Température moyenne de chaque hiver comparée à la normale, et nombre de jours de gel ` +
+      `(minimale sous 0 °C) et sans dégel (maximale sous 0 °C).`;
+  }
+  function tuiles() {
+    const m = C.meta, ep = C.episodes, hv = C.hivers;
+    const complets = hv.filter((x) => x.complet);
+    const totalJours = ep.reduce((s, e) => s + e.duree, 0);
+    const joursComplets = complets.reduce((s, x) => s + x.jours_vdf, 0);
+    const long = ep.length ? [...ep].sort((a, b) => b.duree - a.duree || b.severite - a.severite)[0] : null;
+    const froid = ep.length ? [...ep].sort((a, b) => a.t_min - b.t_min)[0] : null;
+    const t = [
+      { l: 'Épisodes détectés', v: fmt(ep.length), s: `hivers ${labelHiver(m.hiver_analyse[0])} à ${hv[hv.length - 1].label}` },
+      { l: 'Jours en vague de froid', v: fmt(totalJours),
+        s: complets.length ? `soit ${fmt(joursComplets / complets.length, 1)} par hiver en moyenne` : '' },
+      { l: "Épisode le plus long", v: long ? long.duree + ' jours' : '—',
+        s: long ? `du ${dateCourte(long.debut)} au ${dateCourte(long.fin)}` : 'aucun épisode' },
+      { l: 'Jour le plus froid en vague de froid', v: froid ? fmtT(froid.t_min) : '—',
+        s: froid ? dateLongue(froid.date_t_min) : 'aucun épisode' }
+    ];
+    $('#tiles').replaceChildren(...t.map((x) => h('div', { class: 'tile' }, [
+      h('div', { class: 't-label', text: x.l }), h('div', { class: 't-value', text: x.v }), h('div', { class: 't-sub', text: x.s })
+    ])));
+  }
+
+  // ---------- Graphique 1 : barres par hiver ------------------------------
+  function dessinerBarres() {
+    if (!C) return;
+    const boite = $('#chart-hivers');
+    const lignes = C.hivers, cle = etat.metrique, met = METRIQUES[cle];
+    $('#titre-hivers').textContent = met.titre;
+    const incomplets = lignes.filter((x) => !x.complet).map((x) => x.label);
+    $('#sub-hivers').textContent = 'Clique sur un hiver pour le voir au jour le jour.' +
+      (incomplets.length ? ` Barres claires : hiver incomplet (${incomplets.join(', ')}).` : '');
+
+    const W = Math.max(280, Math.round(boite.clientWidth || 700));
+    const H = W < 560 ? 220 : 270;
+    const M = { t: 24, r: 6, b: 30, l: 36 };
+    const iw = W - M.l - M.r, ih = H - M.t - M.b;
+    const vmax = Math.max(0, ...lignes.map((x) => x[cle] || 0));
+    let pas = pasLisible(vmax || 1, 4);
+    if (met.dec === 0) pas = Math.max(1, Math.round(pas));
+    const ymax = Math.max(pas, Math.ceil(vmax / pas) * pas);
+    const y = (v) => M.t + ih - (v / ymax) * ih;
+    const bande = iw / lignes.length;
+    const bw = Math.max(2, Math.min(24, bande * 0.66));
+
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: 'img',
+      'aria-label': met.titre + ' — flèches gauche/droite pour parcourir, Entrée pour sélectionner' });
+    for (let v = 0; v <= ymax + 1e-9; v += pas) {
+      const yy = Math.round(y(v)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yy, y2: yy, class: v === 0 ? 'axis' : 'grid' }, svg);
+      txt('text', { x: M.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'tick' }, fmt(v, pas < 1 ? 1 : 0), svg);
+    }
+    const tous = W < 560 ? 10 : 5;
+    const iMax = vmax > 0 ? lignes.findIndex((x) => x[cle] === vmax) : -1;
+    const groupes = [];
+    lignes.forEach((r, i) => {
+      const cx = M.l + bande * (i + 0.5), v = r[cle] || 0;
+      const g = el('g', { class: 'bar' + (r.hiver === etat.hiver ? ' sel' : '') + (r.complet ? '' : ' partial') }, svg);
+      groupes.push(g);
+      if (v > 0) el('path', { d: barreArrondie(cx - bw / 2, y(v), bw, y(0) - y(v), 4), class: 'bar-mark' }, g);
+      if (r.hiver === etat.hiver) {
+        const lw = Math.max(bw, 8);
+        el('rect', { x: cx - lw / 2, y: M.t + ih + 4, width: lw, height: 3, rx: 1.5, class: 'sel-mark' }, g);
+      }
+      if ((r.hiver - lignes[0].hiver) % tous === 0)
+        txt('text', { x: cx, y: H - 6, 'text-anchor': 'middle', class: 'tick' }, r.label, svg);
+      if (i === iMax) {
+        const anc = cx > W - 60 ? 'end' : cx < M.l + 40 ? 'start' : 'middle';
+        txt('text', { x: cx, y: y(v) - 7, 'text-anchor': anc, class: 'direct' }, met.unite(v) + ' · ' + r.label, svg);
+      }
+      const hit = el('rect', { x: M.l + bande * i, y: M.t - 10, width: bande, height: ih + 18, class: 'hit' }, g);
+      hit.addEventListener('pointermove', (ev) => tipBarre(r, ev.clientX, ev.clientY));
+      hit.addEventListener('pointerleave', cacherTip);
+      hit.addEventListener('click', () => { cacherTip(); choisirHiver(r.hiver, true); });
+    });
+
+    svg.addEventListener('keydown', (ev) => {
+      const n = lignes.length;
+      let i = etat.kbBarre == null ? lignes.findIndex((x) => x.hiver === etat.hiver) : etat.kbBarre;
+      if (ev.key === 'ArrowRight') i = Math.min(n - 1, i + 1);
+      else if (ev.key === 'ArrowLeft') i = Math.max(0, i - 1);
+      else if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); choisirHiver(lignes[i].hiver); $('#chart-hivers svg').focus(); return; }
+      else return;
+      ev.preventDefault();
+      etat.kbBarre = i;
+      groupes.forEach((g, k) => g.classList.toggle('kb', k === i));
+      const b = svg.getBoundingClientRect(), sc = b.width / W;
+      tipBarre(lignes[i], b.left + (M.l + bande * (i + 0.5)) * sc, b.top + (M.t + ih * 0.4) * sc);
+    });
+    svg.addEventListener('blur', () => { etat.kbBarre = null; groupes.forEach((g) => g.classList.remove('kb')); cacherTip(); });
+    boite.replaceChildren(svg);
+  }
+
+  function tipBarre(r, cx, cy) {
+    const l = [
+      { valeur: fmt(r.jours_vdf) + ' j', label: 'en vague de froid', couleur: etat.metrique === 'jours_vdf' ? 'var(--series-1)' : null },
+      { valeur: fmt(r.n_episodes), label: pluriel(r.n_episodes, 'épisode', 'épisodes'), couleur: etat.metrique === 'n_episodes' ? 'var(--series-1)' : null },
+      { valeur: fmt(r.severite, 1) + ' °C·j', label: 'sévérité', couleur: etat.metrique === 'severite' ? 'var(--series-1)' : null },
+      { valeur: fmtT(r.t_moy), label: `moyenne de l'hiver (${fmtEcart(r.anomalie)})` }
+    ];
+    if (!r.complet) l.push({ valeur: Math.round(100 * r.taux_dispo) + ' %', label: r.en_cours ? 'de jours disponibles · hiver en cours' : 'de jours disponibles' });
+    montrerTip('Hiver ' + r.label, l, cx, cy);
+  }
+
+  function noteDecennies() {
+    const cle = etat.metrique, met = METRIQUES[cle];
+    const complets = C.hivers.filter((x) => x.complet);
+    if (!complets.length) { $('#note-hivers').textContent = ''; return; }
+    const debut = C.meta.hiver_analyse[0];
+    const groupes = new Map();
+    for (const x of complets) {
+      const k = Math.floor((x.hiver - debut) / 10);
+      if (!groupes.has(k)) groupes.set(k, []);
+      groupes.get(k).push(x);
+    }
+    const parts = [...groupes.values()].map((g) => {
+      const moy = g.reduce((s, x) => s + x[cle], 0) / g.length;
+      const val = met.dec === 0 ? fmt(moy, 1) + (cle === 'jours_vdf' ? ' j' : '') : fmt(moy, 1) + ' °C·j';
+      return `${g[0].label} → ${g[g.length - 1].label} : ${val}`;
+    });
+    let texte = 'Moyenne par hiver complet — ' + parts.join(' · ') + '.';
+    const tt = C.meta.tendances && C.meta.tendances[cle];
+    if (tt && tt.pente_decennie != null) {
+      const u = cle === 'severite' ? ' °C·j' : cle === 'jours_vdf' ? ' j' : '';
+      texte += ` Tendance : ${signe(tt.pente_decennie, 1)}${u} par décennie (pente de Sen ; moindres carrés ${signe(tt.pente_ols_decennie, 1)}${u}), ` +
+        `${signif(tt.p)} (Mann-Kendall, ${fmtP(tt.p)}).`;
+    }
+    $('#note-hivers').textContent = texte;
+  }
+
+  function tableHivers() {
+    const t = $('#tab-hivers');
+    const cols = [['Hiver', ''], ['Épisodes', 'num'], ['Jours', 'num'], ['Sévérité (°C·j)', 'num'],
+      ['T moy.', 'num'], ['Écart à la normale', 'num'], ['Jours disponibles', 'num']];
+    const thead = h('thead', null, [h('tr', null, cols.map(([c, k]) => h('th', { class: k, text: c })))]);
+    const tbody = h('tbody');
+    [...C.hivers].reverse().forEach((x) => {
+      const tr = h('tr', { class: 'clic', tabindex: '0' }, [
+        h('td', { text: x.label + (x.en_cours ? ' (en cours)' : '') }),
+        h('td', { class: 'num', text: fmt(x.n_episodes) }),
+        h('td', { class: 'num', text: fmt(x.jours_vdf) }),
+        h('td', { class: 'num', text: fmt(x.severite, 1) }),
+        h('td', { class: 'num', text: fmtT(x.t_moy) }),
+        h('td', { class: 'num', text: fmtEcart(x.anomalie) }),
+        h('td', { class: 'num', text: Math.round(100 * x.taux_dispo) + ' %' })
+      ]);
+      tr.addEventListener('click', () => choisirHiver(x.hiver, true));
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') choisirHiver(x.hiver, true); });
+      tbody.appendChild(tr);
+    });
+    t.replaceChildren(thead, tbody);
+  }
+
+  // ---------- Graphique 2 : l'hiver au jour le jour -----------------------
+  function legendeJour() {
+    const m = C.meta;
+    const item = (cle, texte) => h('span', null, [cle, document.createTextNode(texte)]);
+    const ligne = (couleur, fine) => { const s = h('span', { class: 'key-line' + (fine ? ' thin' : '') }); s.style.setProperty('--k', couleur); return s; };
+    $('#legend-jour').replaceChildren(
+      item(ligne('var(--series-1)'), m.variable + ' quotidienne'),
+      item(ligne('var(--muted)'), `Normale ${m.hiver_ref[0]}-${m.hiver_ref[1]} (lissée sur 15 j)`),
+      item(ligne('var(--ink-2)', true), `Seuil P${m.percentile} (${fmtT(m.seuil)})`),
+      item(h('span', { class: 'key-band' }), 'Vague de froid')
+    );
+  }
+
+  function dessinerJour() {
+    if (!C) return;
+    const m = C.meta, hv = etat.hiver;
+    const info = C.hivers.find((x) => x.hiver === hv);
+    const dates = joursHiver(hv), n = dates.length;
+    const pts = dates.map((d, i) => {
+      const r = C.parDate.get(d);
+      return { i, d, t: r ? r.t : null, e: r ? r.e : null, obs: !!r, norm: C.normale.get(d.slice(5)) };
+    });
+    const eps = C.episodes.filter((e) => e.hiver === hv);
+
+    $('#titre-jour').textContent = "L'hiver " + info.label + ' au jour le jour';
+    const jEp = eps.reduce((s, e) => s + e.duree, 0);
+    let sous = (eps.length ? `${eps.length} ${pluriel(eps.length, 'épisode', 'épisodes')}, ${jEp} jours en vague de froid` : 'Aucune vague de froid') +
+      ` · moyenne ${fmtT(info.t_moy)} (${fmtEcart(info.anomalie)} par rapport à la normale)`;
+    if (info.en_cours) sous += ` · données jusqu'au ${dateLongue(m.derniere_date)}`;
+    $('#sub-jour').textContent = sous;
+
+    const boite = $('#chart-jour');
+    const W = Math.max(280, Math.round(boite.clientWidth || 700));
+    const H = W < 560 ? 260 : 330;
+    const M = { t: 12, r: 10, b: 30, l: 40 };
+    const iw = W - M.l - M.r, ih = H - M.t - M.b;
+    const vals = pts.flatMap((p) => [p.t, p.norm]).filter((v) => v != null && !isNaN(v));
+    vals.push(m.seuil);
+    const lo = Math.floor((Math.min(...vals) - 1) / 5) * 5, hi = Math.ceil((Math.max(...vals) + 1) / 5) * 5;
+    const pas = iw / n;
+    const x = (i) => M.l + (i + 0.5) * pas;
+    const y = (v) => M.t + ih - ((v - lo) / (hi - lo)) * ih;
+
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: 'img',
+      'aria-label': `Température quotidienne de l'hiver ${info.label} — flèches gauche/droite pour parcourir les jours` });
+
+    // Bandes des épisodes (sous tout le reste)
+    const idx = new Map(dates.map((d, i) => [d, i]));
+    for (const e of eps) {
+      const i0 = idx.get(e.debut), i1 = idx.get(e.fin);
+      if (i0 == null || i1 == null) continue;
+      el('rect', { x: M.l + i0 * pas, y: M.t, width: (i1 - i0 + 1) * pas, height: ih, class: 'band' }, svg);
+    }
+    // Grille + axe des ordonnées
+    const pasY = (hi - lo) > 30 ? 10 : 5;
+    for (let v = lo; v <= hi + 1e-9; v += pasY) {
+      const yy = Math.round(y(v)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yy, y2: yy, class: v === 0 ? 'axis' : 'grid' }, svg);
+      txt('text', { x: M.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'tick' }, fmt(v), svg);
+    }
+    // Repères de mois
+    const etroit = W < 560;
+    dates.forEach((d, i) => {
+      const jj = d.slice(8), mm = d.slice(5, 7);
+      if (jj === '01' || (!etroit && jj === '15')) {
+        const xx = Math.round(M.l + i * pas) + 0.5;
+        if (jj === '01' && i > 0) el('line', { x1: xx, x2: xx, y1: M.t, y2: M.t + ih, class: 'grid' }, svg);
+        const lab = jj === '01' ? { '12': 'déc.', '01': 'janv.', '02': 'févr.' }[mm] : '15';
+        txt('text', { x: jj === '01' ? xx + 2 : x(i), y: H - 8, 'text-anchor': jj === '01' ? 'start' : 'middle', class: 'tick' }, lab, svg);
+      }
+    });
+    // Seuil, normale, série
+    const ys = Math.round(y(m.seuil)) + 0.5;
+    el('line', { x1: M.l, x2: W - M.r, y1: ys, y2: ys, class: 'line-seuil' }, svg);
+    const chemin = (cle) => {
+      let d = '', stylo = false;
+      for (const p of pts) {
+        const v = p[cle];
+        if (v == null || isNaN(v)) { stylo = false; continue; }
+        d += (stylo ? 'L' : 'M') + x(p.i).toFixed(1) + ',' + y(v).toFixed(1);
+        stylo = true;
+      }
+      return d;
+    };
+    el('path', { d: chemin('norm'), class: 'line-norm' }, svg);
+    el('path', { d: chemin('t'), class: 'line-t' }, svg);
+    if (!pts.some((p) => p.t != null)) txt('text', { x: M.l + iw / 2, y: M.t + ih / 2, 'text-anchor': 'middle', class: 'no-data' }, 'Pas de données pour cet hiver', svg);
+
+    // Étiquette directe : jour le plus froid de l'hiver
+    const valides = pts.filter((p) => p.t != null);
+    if (valides.length) {
+      const pmin = valides.reduce((a, b) => (b.t < a.t ? b : a));
+      el('circle', { cx: x(pmin.i), cy: y(pmin.t), r: 4, class: 'dot' }, svg);
+      const droite = x(pmin.i) > W * 0.72;
+      txt('text', { x: x(pmin.i) + (droite ? -9 : 9), y: y(pmin.t) + 4, 'text-anchor': droite ? 'end' : 'start', class: 'direct' },
+        fmtT(pmin.t) + ' le ' + dfCourt.format(parseISO(pmin.d)), svg);
+      if (etat.kbJour == null) etat.kbJourDefaut = pmin.i;
+    }
+
+    // Réticule + infobulle
+    const croix = el('line', { x1: 0, x2: 0, y1: M.t, y2: M.t + ih, class: 'cross', visibility: 'hidden' }, svg);
+    const point = el('circle', { cx: 0, cy: 0, r: 4, class: 'dot', visibility: 'hidden' }, svg);
+    const overlay = el('rect', { x: M.l, y: M.t, width: iw, height: ih, class: 'overlay' }, svg);
+    function placer(i, cx, cy) {
+      const p = pts[i];
+      croix.setAttribute('x1', x(i)); croix.setAttribute('x2', x(i)); croix.setAttribute('visibility', 'visible');
+      if (p.t != null) { point.setAttribute('cx', x(i)); point.setAttribute('cy', y(p.t)); point.setAttribute('visibility', 'visible'); }
+      else point.setAttribute('visibility', 'hidden');
+      const l = [];
+      if (!p.obs && p.d > m.derniere_date) l.push({ valeur: 'pas encore de données', label: '' });
+      else l.push({ valeur: p.t != null ? fmtT(p.t) : 'donnée manquante', label: m.variable, couleur: 'var(--series-1)' });
+      l.push({ valeur: fmtT(p.norm), label: 'normale', couleur: 'var(--muted)' });
+      if (p.t != null && p.norm != null) l.push({ valeur: fmtEcart(p.t - p.norm), label: 'écart à la normale' });
+      if (p.e != null && C.parId.has(p.e)) {
+        const e = C.parId.get(p.e);
+        l.push({ valeur: 'Vague de froid', label: `${e.duree} j, ${dfCourt.format(parseISO(e.debut))} → ${dfCourt.format(parseISO(e.fin))}`, type: 'band' });
+      }
+      montrerTip(dateLongue(p.d), l, cx, cy);
+    }
+    function cacher() { croix.setAttribute('visibility', 'hidden'); point.setAttribute('visibility', 'hidden'); cacherTip(); }
+    overlay.addEventListener('pointermove', (ev) => {
+      const b = svg.getBoundingClientRect(), sc = W / b.width;
+      const px = (ev.clientX - b.left) * sc;
+      const i = Math.max(0, Math.min(n - 1, Math.floor((px - M.l) / pas)));
+      placer(i, ev.clientX, ev.clientY);
+    });
+    overlay.addEventListener('pointerleave', cacher);
+    function placerClavier(i) {
+      etat.kbJour = i;
+      const b = svg.getBoundingClientRect(), sc = b.width / W;
+      const v = pts[i].t != null ? pts[i].t : (lo + hi) / 2;
+      placer(i, b.left + x(i) * sc, b.top + y(v) * sc);
+    }
+    svg.addEventListener('focus', () => placerClavier(etat.kbJour != null ? etat.kbJour : (etat.kbJourDefaut || 0)));
+    svg.addEventListener('blur', () => { etat.kbJour = null; cacher(); });
+    svg.addEventListener('keydown', (ev) => {
+      const pasK = ev.shiftKey ? 7 : 1;
+      let i = etat.kbJour != null ? etat.kbJour : 0;
+      if (ev.key === 'ArrowRight') i = Math.min(n - 1, i + pasK);
+      else if (ev.key === 'ArrowLeft') i = Math.max(0, i - pasK);
+      else return;
+      ev.preventDefault(); placerClavier(i);
+    });
+    boite.replaceChildren(svg);
+  }
+
+  // ---------- Graphique à bulles des vagues de froid ----------------------
+  const dfMoisA = new Intl.DateTimeFormat('fr-FR', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  function anneeDecimale(s) {
+    const d = parseISO(s), y = d.getUTCFullYear();
+    return y + (d - Date.UTC(y, 0, 1)) / (365.25 * 86400000);
+  }
+  function legendeBulles() {
+    const m = C.meta, ep = C.episodes;
+    $('#sub-bulles').textContent = 'Chaque bulle est un épisode : placée à sa date et à la température la plus basse atteinte, ' +
+      'avec une aire proportionnelle à sa sévérité. Clique sur une bulle pour voir l\'hiver au jour le jour.';
+    $('#legend-bulles').replaceChildren(
+      itemLegende(h('span', { class: 'key-dot' }), `Vague de froid (${m.variable} minimale de l'épisode)`),
+      itemLegende(trait('var(--ink-2)', true), `Seuil P${m.percentile} (${fmtT(m.seuil)})`)
+    );
+    const max = ep.length ? ep.reduce((a, b) => (b.severite > a.severite ? b : a)) : null;
+    $('#note-bulles').textContent = max
+      ? `La plus grosse bulle : ${fmt(max.severite, 1)} °C·j, du ${dateCourte(max.debut)} au ${dateCourte(max.fin)} (${max.duree} jours).` : '';
+  }
+  function dessinerBulles() {
+    if (!C) return;
+    const boite = $('#chart-bulles'), m = C.meta, eps = C.episodes;
+    const W = Math.max(280, Math.round(boite.clientWidth || 700));
+    const H = W < 560 ? 260 : 340;
+    const rMax = W < 560 ? 15 : 26, rMin = 3;
+    const M = { t: 12 + rMax / 2, r: 12, b: 30, l: 40 };
+    const iw = W - M.l - M.r, ih = H - M.t - M.b;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: 'img',
+      'aria-label': 'Vagues de froid en bulles : date, température minimale et sévérité — flèches gauche/droite pour parcourir, Entrée pour sélectionner' });
+    if (!eps.length) {
+      txt('text', { x: W / 2, y: H / 2, 'text-anchor': 'middle', class: 'no-data' }, 'Aucun épisode à afficher', svg);
+      boite.replaceChildren(svg); return;
+    }
+    const x0 = m.hiver_analyse[0] - 1 + 334 / 365.25, x1 = m.hiver_analyse[1] + 59 / 365.25;
+    const x = (a) => M.l + ((a - x0) / (x1 - x0)) * iw;
+    const tmin = Math.min(...eps.map((e) => e.t_min));
+    const pasY = pasLisible(Math.max(1, m.seuil - tmin + 2), 5);
+    const lo = Math.floor((tmin - 0.5) / pasY) * pasY, hi = Math.ceil((m.seuil + 0.5) / pasY) * pasY;
+    const y = (v) => M.t + ih - ((v - lo) / (hi - lo)) * ih;
+    const sevMax = Math.max(...eps.map((e) => e.severite), 1e-9);
+    const rayon = (s) => Math.max(rMin, Math.sqrt(s / sevMax) * rMax);   // aire ∝ sévérité
+
+    const nY = Math.round((hi - lo) / pasY);
+    for (let k = 0; k <= nY; k++) {
+      const v = Math.round((lo + k * pasY) * 100) / 100, yy = Math.round(y(v)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yy, y2: yy, class: v === 0 ? 'axis' : 'grid' }, svg);
+      txt('text', { x: M.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'tick' }, fmt(v), svg);
+    }
+    const pasX = W < 560 ? 10 : 5;
+    for (let a = Math.ceil(x0 / pasX) * pasX; a <= x1; a += pasX) {
+      const xx = Math.round(x(a)) + 0.5;
+      el('line', { x1: xx, x2: xx, y1: M.t, y2: M.t + ih, class: 'grid' }, svg);
+      txt('text', { x: xx, y: H - 8, 'text-anchor': 'middle', class: 'tick' }, String(a), svg);
+    }
+    const ys = Math.round(y(m.seuil)) + 0.5;
+    el('line', { x1: M.l, x2: W - M.r, y1: ys, y2: ys, class: 'line-seuil' }, svg);
+
+    // Les plus grosses d'abord, pour que les petites restent visibles et survolables
+    const ordre = [...eps].sort((a, b) => b.severite - a.severite);
+    const top3 = new Set(ordre.slice(0, 3).map((e) => e.id));
+    const parId = new Map();
+    for (const e of ordre) {
+      const cx = x(anneeDecimale(e.debut)), cy = y(e.t_min), r = rayon(e.severite);
+      const g = el('g', null, svg);
+      const c = el('circle', { cx, cy, r, class: 'bulle' + (e.hiver === etat.hiver ? ' sel' : '') }, g);
+      if (r < 10) el('circle', { cx, cy, r: 10, class: 'hit-bulle' }, g);
+      parId.set(e.id, { c, cx, cy });
+      g.addEventListener('pointermove', (ev) => tipBulle(e, ev.clientX, ev.clientY));
+      g.addEventListener('pointerleave', cacherTip);
+      g.addEventListener('click', () => { cacherTip(); choisirHiver(e.hiver, true); });
+    }
+    for (const e of ordre.slice(0, 3)) {
+      const p = parId.get(e.id), r = rayon(e.severite);
+      const droite = p.cx > W - 110;
+      txt('text', { x: p.cx + (droite ? -(r + 5) : r + 5), y: p.cy + 4, 'text-anchor': droite ? 'end' : 'start', class: 'direct' },
+        dfMoisA.format(parseISO(e.date_t_min)), svg);
+    }
+    // Clavier : parcours chronologique
+    const chrono = [...eps].sort((a, b) => (a.debut < b.debut ? -1 : 1));
+    let i = null;
+    svg.addEventListener('keydown', (ev) => {
+      if (i == null) { i = chrono.findIndex((e) => e.hiver === etat.hiver); if (i < 0) i = chrono.length - 1; }
+      if (ev.key === 'ArrowRight') i = Math.min(chrono.length - 1, i + 1);
+      else if (ev.key === 'ArrowLeft') i = Math.max(0, i - 1);
+      else if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault(); choisirHiver(chrono[i].hiver);
+        const neuf = document.querySelector('#chart-bulles svg'); if (neuf) neuf.focus(); return;
+      } else return;
+      ev.preventDefault();
+      parId.forEach((p) => p.c.classList.remove('kb'));
+      const p = parId.get(chrono[i].id); p.c.classList.add('kb');
+      const b = svg.getBoundingClientRect(), sc = b.width / W;
+      tipBulle(chrono[i], b.left + p.cx * sc, b.top + p.cy * sc);
+    });
+    svg.addEventListener('blur', () => { i = null; parId.forEach((p) => p.c.classList.remove('kb')); cacherTip(); });
+    boite.replaceChildren(svg);
+  }
+  function tipBulle(e, cx, cy) {
+    const l = [
+      { valeur: e.duree + ' jours', label: `du ${dfCourt.format(parseISO(e.debut))} au ${dfCourt.format(parseISO(e.fin))}` },
+      { valeur: fmtT(e.t_min), label: 'au plus bas, le ' + dfCourt.format(parseISO(e.date_t_min)), couleur: 'var(--series-1)' },
+      { valeur: fmtT(e.t_moy), label: "en moyenne sur l'épisode" },
+      { valeur: fmt(e.severite, 1) + ' °C·j', label: 'sévérité' }
+    ];
+    if (e.debut_tronque || e.fin_tronque) l.push({ valeur: 'tronqué', label: 'touche le bord de la saison DJF' });
+    if (e.en_cours) l.push({ valeur: 'en cours', label: 'à la date des dernières données' });
+    montrerTip('Vague de froid · hiver ' + labelHiver(e.hiver), l, cx, cy);
+  }
+
+  // Données produites par une ancienne version du script R : on le signale
+  function alerteVersion() {
+    const ancien = !C.meta.version_donnees || C.meta.version_donnees < 2;
+    let a = document.getElementById('alerte-version');
+    if (!ancien) { if (a) a.remove(); return; }
+    if (!a) {
+      a = h('div', { class: 'alerte', id: 'alerte-version', role: 'alert' });
+      $('#main').prepend(a);
+    }
+    a.replaceChildren(h('strong', { text: '⚠ Données à régénérer. ' }),
+      document.createTextNode(`Le fichier data/vdf_${C.meta.slug}.js a été produit par une ancienne version du script : ` +
+        'les tendances, le LOESS et les jours de gel ne peuvent pas s\'afficher. Relance la nouvelle version de VDF_portail.R, puis recharge la page (F5).'));
+  }
+
+  // ---------- Rubrique : températures hivernales --------------------------
+  function barreDepuis(x, yBase, yFin, w, r) {
+    // barre qui part de la ligne de base et s'arrondit côté valeur (vers le haut ou le bas)
+    const hh = Math.abs(yFin - yBase);
+    r = Math.min(r, w / 2, hh);
+    if (yFin <= yBase) return barreArrondie(x, yFin, w, hh, r);
+    return `M${x},${yBase}V${yFin - r}Q${x},${yFin} ${x + r},${yFin}H${x + w - r}Q${x + w},${yFin} ${x + w},${yFin - r}V${yBase}Z`;
+  }
+  function etiquettesHivers(svg, lignes, M, W, H, bande) {
+    const tous = W < 560 ? 10 : 5;
+    lignes.forEach((r, i) => {
+      if ((r.hiver - lignes[0].hiver) % tous === 0)
+        txt('text', { x: M.l + bande * (i + 0.5), y: H - 6, 'text-anchor': 'middle', class: 'tick' }, r.label, svg);
+    });
+  }
+  function marqueSelection(g, cx, bw, yBas) {
+    const lw = Math.max(bw, 8);
+    el('rect', { x: cx - lw / 2, y: yBas + 4, width: lw, height: 3, rx: 1.5, class: 'sel-mark' }, g);
+  }
+  // Navigation clavier commune : flèches pour parcourir, Entrée pour sélectionner
+  function clavierBarres(svg, lignes, groupes, position, montrer) {
+    let i = null;
+    svg.addEventListener('keydown', (ev) => {
+      if (i == null) i = Math.max(0, lignes.findIndex((x) => x.hiver === etat.hiver));
+      if (ev.key === 'ArrowRight') i = Math.min(lignes.length - 1, i + 1);
+      else if (ev.key === 'ArrowLeft') i = Math.max(0, i - 1);
+      else if (ev.key === 'Enter' || ev.key === ' ') {
+        ev.preventDefault();
+        const id = svg.parentNode.id;
+        choisirHiver(lignes[i].hiver);
+        const neuf = document.querySelector('#' + id + ' svg');
+        if (neuf) neuf.focus();
+        return;
+      } else return;
+      ev.preventDefault();
+      groupes.forEach((g, k) => g.classList.toggle('kb', k === i));
+      const b = svg.getBoundingClientRect(), sc = b.width / Number(svg.getAttribute('width'));
+      const [px, py] = position(i);
+      montrer(lignes[i], b.left + px * sc, b.top + py * sc);
+    });
+    svg.addEventListener('blur', () => { i = null; groupes.forEach((g) => g.classList.remove('kb')); cacherTip(); });
+  }
+  function carre(couleur) { const s = h('span', { class: 'key-sq' }); s.style.setProperty('--k', couleur); return s; }
+  function trait(couleur, fin) { const s = h('span', { class: 'key-line' + (fin ? ' thin' : '') }); s.style.setProperty('--k', couleur); return s; }
+  const itemLegende = (cle, texte) => h('span', null, [cle, document.createTextNode(texte)]);
+  const pct = (v) => Math.round(100 * v) + ' %';
+
+  function tuilesTemp() {
+    const m = C.meta, T = m.tendances || {};
+    const ta = T.anomalie || {}, tg = T.n_gel || {}, ts = T.n_sans_degel || {};
+    const complets = C.hivers.filter((x) => x.complet && x.anomalie != null);
+    const froid = complets.length ? complets.reduce((a, b) => (b.anomalie < a.anomalie ? b : a)) : null;
+    const doux = complets.length ? complets.reduce((a, b) => (b.anomalie > a.anomalie ? b : a)) : null;
+    const sousTend = (t, u) => t.pente_decennie == null ? 'tendance non calculable'
+      : `tendance ${signe(t.pente_decennie, 1)} ${u} par décennie, ${signif(t.p)}`;
+    const t = [
+      { l: 'Tendance des hivers, par décennie', v: ta.pente_decennie == null ? '—' : signe(ta.pente_decennie, 2) + '\u00a0°C',
+        s: ta.pente_decennie == null ? '' : `${signif(ta.p)} (${fmtP(ta.p)}), ${labelHiver(ta.x_debut)} → ${labelHiver(ta.x_fin)}` },
+      { l: 'Jours de gel par hiver', v: fmt(m.normale_gel, 1) + '\u00a0j',
+        s: `normale ${m.hiver_ref[0]}-${m.hiver_ref[1]} · ${sousTend(tg, 'j')}` },
+      { l: 'Jours sans dégel par hiver', v: fmt(m.normale_sans_degel, 1) + '\u00a0j',
+        s: `normale ${m.hiver_ref[0]}-${m.hiver_ref[1]} · ${sousTend(ts, 'j')}` },
+      { l: 'Hiver le plus froid (écart à la normale)', v: froid ? fmtEcart(froid.anomalie) : '—',
+        s: froid ? `${froid.label} · le plus doux : ${doux.label} (${fmtEcart(doux.anomalie)})` : '' }
+    ];
+    $('#tiles-temp').replaceChildren(...t.map((x) => h('div', { class: 'tile' }, [
+      h('div', { class: 't-label', text: x.l }), h('div', { class: 't-value', text: x.v }), h('div', { class: 't-sub', text: x.s })
+    ])));
+  }
+
+  function legendesTemp() {
+    const m = C.meta;
+    const paire = h('span', { class: 'key-pair' }, [carre('var(--warm)'), carre('var(--series-1)')]);
+    $('#legend-anom').replaceChildren(
+      itemLegende(paire, 'Hiver plus doux / plus froid que la normale'),
+      itemLegende(trait('var(--ink)'), `LOESS (span ${fmt(m.loess_span, 2)})`),
+      itemLegende(h('span', { class: 'key-ci' }), 'Intervalle de confiance à 95 %'),
+      itemLegende(trait('var(--muted)'), (m.tendances && m.tendances.anomalie && m.tendances.anomalie.pente_decennie != null)
+        ? `Tendance de Sen (${signe(m.tendances.anomalie.pente_decennie, 2)} °C par décennie)` : 'Tendance de Sen')
+    );
+    $('#legend-gel').replaceChildren(
+      itemLegende(carre('var(--gel-2)'), 'Jours sans dégel (maximale < 0 °C)'),
+      itemLegende(carre('var(--gel-1)'), 'Autres jours de gel (minimale < 0 °C)'),
+      itemLegende(trait('var(--ink-2)', true), `Normale ${m.hiver_ref[0]}-${m.hiver_ref[1]} des jours de gel (${fmt(m.normale_gel, 1)} j)`)
+    );
+    $('#sub-anom').textContent = `Écart entre la température moyenne (${m.variable}) de l'hiver et la normale ${m.hiver_ref[0]}-${m.hiver_ref[1]} ` +
+      `(${fmtT(m.normale_djf)}). Clique sur un hiver pour le voir au jour le jour.`;
+    $('#sub-gel').textContent = `Décembre à février. Une barre = tous les jours de gel de l'hiver ; la partie foncée = ceux qui sont aussi sans dégel.`;
+  }
+
+  function notesTemp() {
+    const m = C.meta, T = m.tendances || {};
+    const ta = T.anomalie, tg = T.n_gel, ts = T.n_sans_degel;
+    const incomplets = C.hivers.filter((x) => !x.complet).map((x) => x.label);
+    let a = '';
+    if (ta && ta.pente_decennie != null)
+      a = `Tendance ${labelHiver(ta.x_debut)} → ${labelHiver(ta.x_fin)} : ${signe(ta.pente_decennie, 2)} °C par décennie ` +
+        `(pente de Sen ; moindres carrés ${signe(ta.pente_ols_decennie, 2)} °C), ${signif(ta.p)} (Mann-Kendall, ${fmtP(ta.p)}, ${ta.n} hivers).`;
+    if (incomplets.length) a += ` Hivers incomplets (${incomplets.join(', ')}) : en clair, exclus du LOESS et de la tendance.`;
+    $('#note-anom').textContent = a;
+    const g = (t, nom) => (t && t.pente_decennie != null)
+      ? `${nom} : ${signe(t.pente_decennie, 1)} j par décennie (moindres carrés ${signe(t.pente_ols_decennie, 1)} j), ${signif(t.p)} (${fmtP(t.p)})` : '';
+    $('#note-gel').textContent = 'Tendances — ' + [g(tg, 'jours de gel'), g(ts, 'jours sans dégel')].filter(Boolean).join(' · ') + '.';
+  }
+
+  function dessinerAnomalies() {
+    if (!C) return;
+    const boite = $('#chart-anom'), m = C.meta, lignes = C.hivers;
+    const W = Math.max(280, Math.round(boite.clientWidth || 700));
+    const H = W < 560 ? 240 : 300;
+    const M = { t: 18, r: 6, b: 30, l: 40 };
+    const iw = W - M.l - M.r, ih = H - M.t - M.b;
+    const vals = [0];
+    lignes.forEach((r) => [r.anomalie, r.loess_bas, r.loess_haut].forEach((v) => { if (v != null && !isNaN(v)) vals.push(v); }));
+    const vmin = Math.min(...vals), vmax = Math.max(...vals);
+    const pas = pasLisible((vmax - vmin) || 1, 5);
+    const lo = Math.floor(vmin / pas) * pas, hi = Math.ceil(vmax / pas) * pas;
+    const y = (v) => M.t + ih - ((v - lo) / (hi - lo)) * ih;
+    const bande = iw / lignes.length, bw = Math.max(2, Math.min(24, bande * 0.66));
+    const cx = (i) => M.l + bande * (i + 0.5);
+    const indice = new Map(lignes.map((r, i) => [r.hiver, i]));
+
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: 'img',
+      'aria-label': "Anomalie de température de chaque hiver, LOESS et tendance — flèches gauche/droite pour parcourir, Entrée pour sélectionner" });
+    // Intervalle de confiance du LOESS (derrière tout)
+    const segments = [];
+    let seg = [];
+    lignes.forEach((r, i) => { if (r.loess != null) seg.push(i); else if (seg.length) { segments.push(seg); seg = []; } });
+    if (seg.length) segments.push(seg);
+    for (const s of segments) {
+      const haut = s.map((i) => cx(i).toFixed(1) + ',' + y(lignes[i].loess_haut).toFixed(1));
+      const bas = s.slice().reverse().map((i) => cx(i).toFixed(1) + ',' + y(lignes[i].loess_bas).toFixed(1));
+      el('path', { d: 'M' + haut.join('L') + 'L' + bas.join('L') + 'Z', class: 'ci' }, svg);
+    }
+    // Grille
+    const nTicks = Math.round((hi - lo) / pas);
+    for (let k = 0; k <= nTicks; k++) {
+      const v = Math.round((lo + k * pas) * 1000) / 1000;
+      const yy = Math.round(y(v)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yy, y2: yy, class: v === 0 ? 'axis' : 'grid' }, svg);
+      txt('text', { x: M.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'tick' }, signe(v, pas < 1 ? 1 : 0), svg);
+    }
+    // Barres
+    const y0 = y(0), groupes = [];
+    lignes.forEach((r, i) => {
+      const g = el('g', { class: 'bar-a' + (r.complet ? '' : ' partial') }, svg);
+      groupes.push(g);
+      if (r.anomalie != null) {
+        const yv = y(r.anomalie);
+        if (Math.abs(yv - y0) >= 0.5)
+          el('path', { d: barreDepuis(cx(i) - bw / 2, y0, yv, bw, 4), class: 'm ' + (r.anomalie > 0 ? 'chaud' : 'froid') }, g);
+      }
+      if (r.hiver === etat.hiver) marqueSelection(g, cx(i), bw, M.t + ih);
+    });
+    etiquettesHivers(svg, lignes, M, W, H, bande);
+    // LOESS
+    for (const s of segments) {
+      const d = 'M' + s.map((i) => cx(i).toFixed(1) + ',' + y(lignes[i].loess).toFixed(1)).join('L');
+      el('path', { d, class: 'halo' }, svg);
+      el('path', { d, class: 'line-loess' }, svg);
+    }
+    // Tendance de Sen
+    const tt = m.tendances && m.tendances.anomalie;
+    if (tt && tt.pente_decennie != null && indice.has(tt.x_debut) && indice.has(tt.x_fin)) {
+      const f = (hv) => tt.ordonnee + (tt.pente_decennie / 10) * hv;
+      const x1 = cx(indice.get(tt.x_debut)), x2 = cx(indice.get(tt.x_fin));
+      const d = `M${x1.toFixed(1)},${y(f(tt.x_debut)).toFixed(1)}L${x2.toFixed(1)},${y(f(tt.x_fin)).toFixed(1)}`;
+      el('path', { d, class: 'halo' }, svg);
+      el('path', { d, class: 'line-trend' }, svg);
+    }
+    // Survol et clic
+    lignes.forEach((r, i) => {
+      const hit = el('rect', { x: M.l + bande * i, y: M.t, width: bande, height: ih + 10, class: 'hit' }, groupes[i]);
+      hit.addEventListener('pointermove', (ev) => tipAnom(r, ev.clientX, ev.clientY));
+      hit.addEventListener('pointerleave', cacherTip);
+      hit.addEventListener('click', () => { cacherTip(); choisirHiver(r.hiver, true); });
+    });
+    clavierBarres(svg, lignes, groupes, (i) => [cx(i), lignes[i].anomalie != null ? y(lignes[i].anomalie) : y0], tipAnom);
+    boite.replaceChildren(svg);
+  }
+
+  function tipAnom(r, cx, cy) {
+    const l = [];
+    if (r.anomalie == null) l.push({ valeur: 'pas de données', label: '' });
+    else {
+      l.push({ valeur: fmtEcart(r.anomalie), label: 'par rapport à la normale', couleur: r.anomalie > 0 ? 'var(--warm)' : 'var(--series-1)' });
+      l.push({ valeur: fmtT(r.t_moy), label: "température moyenne de l'hiver" });
+    }
+    if (r.loess != null) l.push({ valeur: fmtEcart(r.loess), label: 'LOESS', couleur: 'var(--ink)' });
+    if (!r.complet) l.push({ valeur: pct(r.taux_dispo), label: 'de jours disponibles' + (r.en_cours ? ' · hiver en cours' : '') + ' · exclu du calcul' });
+    montrerTip('Hiver ' + r.label, l, cx, cy);
+  }
+
+  function dessinerGel() {
+    if (!C) return;
+    const boite = $('#chart-gel'), m = C.meta, lignes = C.hivers;
+    if (lignes.length && lignes[0].n_gel === undefined) {
+      boite.replaceChildren(h('p', { class: 'note muted', text: 'Pas de jours de gel dans ce fichier de données : relance la nouvelle version du script R.' }));
+      return;
+    }
+    const W = Math.max(280, Math.round(boite.clientWidth || 700));
+    const H = W < 560 ? 220 : 270;
+    const M = { t: 24, r: 6, b: 30, l: 36 };
+    const iw = W - M.l - M.r, ih = H - M.t - M.b;
+    const vmax = Math.max(1, m.normale_gel || 0, ...lignes.map((x) => x.n_gel || 0));
+    let pas = Math.max(1, Math.round(pasLisible(vmax, 4)));
+    const ymax = Math.ceil(vmax / pas) * pas;
+    const y = (v) => M.t + ih - (v / ymax) * ih;
+    const bande = iw / lignes.length, bw = Math.max(2, Math.min(24, bande * 0.66));
+    const cx = (i) => M.l + bande * (i + 0.5);
+
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, tabindex: 0, role: 'img',
+      'aria-label': 'Jours de gel et jours sans dégel par hiver — flèches gauche/droite pour parcourir, Entrée pour sélectionner' });
+    for (let v = 0; v <= ymax; v += pas) {
+      const yy = Math.round(y(v)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yy, y2: yy, class: v === 0 ? 'axis' : 'grid' }, svg);
+      txt('text', { x: M.l - 8, y: yy + 4, 'text-anchor': 'end', class: 'tick' }, fmt(v), svg);
+    }
+    const groupes = [];
+    const iMax = lignes.reduce((b, r, i) => ((r.n_gel || 0) > (lignes[b].n_gel || 0) ? i : b), 0);
+    lignes.forEach((r, i) => {
+      const g = el('g', { class: 'bar' + (r.complet_gel ? '' : ' partial') }, svg);
+      groupes.push(g);
+      const tot = r.n_gel || 0, glace = r.n_sans_degel || 0, x0 = cx(i) - bw / 2;
+      if (glace > 0) {
+        const yg = y(glace), haut = tot > glace ? 0 : 4;
+        el('path', { d: haut ? barreArrondie(x0, yg, bw, y(0) - yg, 4) : `M${x0},${y(0)}V${yg}H${x0 + bw}V${y(0)}Z`, class: 'seg-gel2' }, g);
+      }
+      if (tot > glace) {
+        const bas = glace > 0 ? y(glace) - 2 : y(0);   // 2 px d'écart entre segments
+        const yt = y(tot);
+        if (bas - yt > 0.5) el('path', { d: barreArrondie(x0, yt, bw, bas - yt, 4), class: 'seg-gel1' }, g);
+      }
+      if (r.hiver === etat.hiver) marqueSelection(g, cx(i), bw, M.t + ih);
+      if (i === iMax && tot > 0) {
+        const anc = cx(i) > W - 60 ? 'end' : cx(i) < M.l + 40 ? 'start' : 'middle';
+        txt('text', { x: cx(i), y: y(tot) - 7, 'text-anchor': anc, class: 'direct' }, tot + ' j · ' + r.label, svg);
+      }
+    });
+    if (m.normale_gel != null) {
+      const yn = Math.round(y(m.normale_gel)) + 0.5;
+      el('line', { x1: M.l, x2: W - M.r, y1: yn, y2: yn, class: 'line-seuil' }, svg);
+    }
+    etiquettesHivers(svg, lignes, M, W, H, bande);
+    lignes.forEach((r, i) => {
+      const hit = el('rect', { x: M.l + bande * i, y: M.t - 10, width: bande, height: ih + 18, class: 'hit' }, groupes[i]);
+      hit.addEventListener('pointermove', (ev) => tipGel(r, ev.clientX, ev.clientY));
+      hit.addEventListener('pointerleave', cacherTip);
+      hit.addEventListener('click', () => { cacherTip(); choisirHiver(r.hiver, true); });
+    });
+    clavierBarres(svg, lignes, groupes, (i) => [cx(i), y((lignes[i].n_gel || 0) / 2)], tipGel);
+    boite.replaceChildren(svg);
+  }
+
+  function tipGel(r, cx, cy) {
+    const m = C.meta;
+    const l = [
+      { valeur: fmt(r.n_gel) + ' j', label: 'de gel (minimale < 0 °C)', couleur: 'var(--gel-1)' },
+      { valeur: fmt(r.n_sans_degel) + ' j', label: 'dont sans dégel (maximale < 0 °C)', couleur: 'var(--gel-2)' }
+    ];
+    if (m.normale_gel != null) l.push({ valeur: signe(r.n_gel - m.normale_gel, 1) + ' j', label: 'de gel par rapport à la normale' });
+    if (!r.complet_gel) l.push({ valeur: pct(r.taux_dispo_gel), label: 'de jours disponibles' + (r.en_cours ? ' · hiver en cours' : '') });
+    montrerTip('Hiver ' + r.label, l, cx, cy);
+  }
+
+  function tableTemp() {
+    const cols = [['Hiver', ''], ['T moy.', 'num'], ['Anomalie', 'num'], ['LOESS', 'num'],
+      ['Jours de gel', 'num'], ['Jours sans dégel', 'num'], ['Jours disponibles', 'num']];
+    const thead = h('thead', null, [h('tr', null, cols.map(([c, k]) => h('th', { class: k, text: c })))]);
+    const tbody = h('tbody');
+    [...C.hivers].reverse().forEach((x) => {
+      const tr = h('tr', { class: 'clic', tabindex: '0' }, [
+        h('td', { text: x.label + (x.en_cours ? ' (en cours)' : '') }),
+        h('td', { class: 'num', text: fmtT(x.t_moy) }),
+        h('td', { class: 'num', text: fmtEcart(x.anomalie) }),
+        h('td', { class: 'num', text: x.loess == null ? '—' : fmtEcart(x.loess) }),
+        h('td', { class: 'num', text: fmt(x.n_gel) }),
+        h('td', { class: 'num', text: fmt(x.n_sans_degel) }),
+        h('td', { class: 'num', text: pct(Math.min(x.taux_dispo, x.taux_dispo_gel)) })
+      ]);
+      tr.addEventListener('click', () => choisirHiver(x.hiver, true));
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') choisirHiver(x.hiver, true); });
+      tbody.appendChild(tr);
+    });
+    $('#tab-temp').replaceChildren(thead, tbody);
+  }
+
+  // ---------- Tableau des épisodes ---------------------------------------
+  const COLS_EP = [
+    { cle: 'hiver', titre: 'Hiver', val: (e) => labelHiver(e.hiver) },
+    { cle: 'debut', titre: 'Début', val: (e) => dateCourte(e.debut), flag: (e) => e.debut_tronque ? '*' : '' },
+    { cle: 'fin', titre: 'Fin', val: (e) => dateCourte(e.fin), flag: (e) => e.en_cours ? 'en cours' : e.fin_tronque ? '*' : '' },
+    { cle: 'duree', titre: 'Durée', val: (e) => e.duree + ' j', num: true },
+    { cle: 't_min', titre: 'T min', val: (e) => fmtT(e.t_min), num: true },
+    { cle: 't_moy', titre: 'T moy.', val: (e) => fmtT(e.t_moy), num: true },
+    { cle: 'severite', titre: 'Sévérité', val: (e) => fmt(e.severite, 1) + ' °C·j', num: true }
+  ];
+  function tableEpisodes() {
+    const t = $('#tab-ep');
+    if (!C.episodes.length) {
+      t.replaceChildren();
+      $('#note-ep').textContent = 'Aucun épisode ne remplit les critères sur la période.';
+      return;
+    }
+    const { cle, sens } = etat.tri;
+    const tries = [...C.episodes].sort((a, b) => {
+      const va = cle === 'hiver' ? a.debut : a[cle], vb = cle === 'hiver' ? b.debut : b[cle];
+      return (va < vb ? -1 : va > vb ? 1 : 0) * sens;
+    });
+    const tr = h('tr');
+    for (const c of COLS_EP) {
+      const actif = c.cle === cle;
+      const b = h('button', { type: 'button' }, [
+        document.createTextNode(c.titre),
+        h('span', { class: 'arrow', 'aria-hidden': 'true', text: actif ? (sens < 0 ? '▼' : '▲') : '' })
+      ]);
+      b.addEventListener('click', () => {
+        etat.tri = { cle: c.cle, sens: actif ? -sens : (c.cle === 't_min' || c.cle === 't_moy' ? 1 : -1) };
+        tableEpisodes();
+      });
+      tr.appendChild(h('th', { class: c.num ? 'num' : '', 'aria-sort': actif ? (sens < 0 ? 'descending' : 'ascending') : 'none' }, [b]));
+    }
+    const tbody = h('tbody');
+    for (const e of tries) {
+      const ligne = h('tr', { class: 'clic' + (e.hiver === etat.hiver ? ' courant' : ''), tabindex: '0' },
+        COLS_EP.map((c) => {
+          const td = h('td', { class: c.num ? 'num' : '', text: c.val(e) });
+          const f = c.flag ? c.flag(e) : '';
+          if (f) td.appendChild(h('span', { class: 'flag', text: f }));
+          return td;
+        }));
+      ligne.addEventListener('click', () => choisirHiver(e.hiver, true));
+      ligne.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') choisirHiver(e.hiver, true); });
+      tbody.appendChild(ligne);
+    }
+    t.replaceChildren(h('thead', null, [tr]), tbody);
+    const tronques = C.episodes.some((e) => e.debut_tronque || e.fin_tronque);
+    $('#note-ep').textContent = (tronques ? '* L\'épisode touche le 1er décembre ou la fin février : il a pu commencer en novembre ou se prolonger en mars. ' : '') +
+      'Sévérité = somme des écarts au seuil sur la durée de l\'épisode.';
+  }
+
+  // ---------- Méthode & pied de page --------------------------------------
+  function methode() {
+    const m = C.meta;
+    const li = (fort, texte) => h('li', null, [h('strong', { text: fort + ' ' }), document.createTextNode(texte)]);
+    const items = [
+      li('Données.', `Série quotidienne de la station ${m.station} (n° ${m.num_poste}, ${fmt(m.alti)} m), du ${dateLongue(m.premiere_date)} au ${dateLongue(m.derniere_date)}. Les valeurs marquées douteuses par Météo-France (code qualité 2) sont écartées.`),
+      li('Variable.', `${m.variable_libelle.charAt(0).toUpperCase() + m.variable_libelle.slice(1)}.` +
+        (m.jours_remplis_tntxm > 0 ? ` Quand elle manque, elle est remplacée par (TN+TX)/2 : ${fmt(m.jours_remplis_tntxm)} jours d'hiver concernés.` : '')),
+      li('Seuil de vague de froid.', `${m.percentile}e percentile de toutes les valeurs quotidiennes de décembre, janvier et février des hivers ${labelHiver(m.hiver_ref[0])} à ${labelHiver(m.hiver_ref[1])} (période de référence ${m.hiver_ref[0]}-${m.hiver_ref[1]}, ${Math.round(100 * m.taux_ref)} % de jours disponibles) : ${fmtT(m.seuil)}. Le 10e percentile est la convention ETCCDI (Expert Team on Climate Change Detection and Indices, OMM) pour les extrêmes froids.`),
+      li('Vague de froid.', `Au moins ${m.duree_min} jours consécutifs strictement sous le seuil. Un jour manquant interrompt l'épisode. La détection se limite à la saison DJF.`),
+      li('Sévérité.', 'Somme, sur la durée de l\'épisode, des écarts entre le seuil et la température du jour (°C·jour).'),
+      li('Hiver.', `Décembre de l'année N-1, janvier et février de l'année N (l'hiver 2012 est noté 2011-12). Les hivers avec moins de ${Math.round(100 * m.taux_min_hiver)} % de jours disponibles sont affichés en clair et exclus des tendances.`),
+      li('Anomalie.', `Température moyenne (${m.variable}) de l'hiver moins la normale DJF ${m.hiver_ref[0]}-${m.hiver_ref[1]} (${fmtT(m.normale_djf)}).`),
+      li('LOESS.', `Régression locale de degré 2 (span ${fmt(m.loess_span, 2)}) ajustée sur les hivers complets, avec son intervalle de confiance à 95 %.`),
+      li('Tendance.', "Pente de Sen (médiane des pentes entre toutes les paires d'hivers, peu sensible aux hivers extrêmes), exprimée par décennie. " +
+        "Sa significativité est testée par Mann-Kendall au seuil de 5 %, sans correction de l'autocorrélation. La pente des moindres carrés est donnée pour comparaison. " +
+        "Sur des comptages souvent nuls (jours de vague de froid), la pente de Sen vaut fréquemment 0 : la pente des moindres carrés est alors plus parlante."),
+      li('Gel.', `Jour de gel : minimale (TN) sous 0 °C ; jour sans dégel : maximale (TX) sous 0 °C (indices ETCCDI FD et ID), comptés de décembre à février. ` +
+        `Normales ${m.hiver_ref[0]}-${m.hiver_ref[1]} : ${fmt(m.normale_gel, 1)} jours de gel et ${fmt(m.normale_sans_degel, 1)} jours sans dégel par hiver.`)
+    ];
+    $('#methode').replaceChildren(...items);
+  }
+  function pied() {
+    const m = C.meta;
+    $('#footer').replaceChildren(
+      h('p', { text: 'Source : ' + m.source + '.' }),
+      h('p', { text: 'Calculs personnels, page générée le ' + dateLongue(m.genere_le.slice(0, 10)) + ' à ' + m.genere_le.slice(11, 16) + '.' })
+    );
+  }
+
+  demarrer();
+})();
+</script>
+</body>
+</html>
